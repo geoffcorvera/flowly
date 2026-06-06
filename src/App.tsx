@@ -292,11 +292,11 @@ export default function App() {
   },[periodTxns,incomeCats,savingsCats,investCats,retireCats,nonExpense]);
 
   const catData = useMemo(()=>{
-    const sp=periodTxns.filter(t=>t.amount<0&&!incomeCats.includes(t.category)&&!xferCats.includes(t.category));
+    const sp=periodTxns.filter(t=>t.amount<0&&!nonExpense.includes(t.category));
     return Object.entries(_.groupBy(sp,"category"))
       .map(([name,ts])=>({name,value:Math.round(Math.abs(_.sumBy(ts,eff)))}))
       .sort((a,b)=>b.value-a.value);
-  },[periodTxns,incomeCats,xferCats]);
+  },[periodTxns,nonExpense]);
 
   // ── CSV handlers ───────────────────────────────────────────────────────────
   const handleFile=f=>{if(!f)return;Papa.parse(f,{header:true,skipEmptyLines:true,complete:({data,meta})=>{setCsvHdrs(meta.fields||[]);setCsvRows(data);setColMap(detectCols(meta.fields||[]));setCsvStep("map");}});};
