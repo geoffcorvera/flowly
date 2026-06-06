@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useEffect, Fragment } from "react";
 import Papa from "papaparse";
+import { parseDate } from "./parseDate";
 import _ from "lodash";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
@@ -305,7 +306,7 @@ export default function App() {
       const name=(row[colMap.description]||"").trim();
       const amt=parseFloat((row[colMap.amount]||"0").replace(/[$,\s]/g,""))||0;
       const cat=colMap.category&&row[colMap.category]?row[colMap.category]:autoCat(name);
-      const date=(row[colMap.date]||"").trim();
+      const date=parseDate(row[colMap.date]||"");
       return {id:`${date}|${amt}|${name.slice(0,40)}`,date,name,amount:amt,category:cat,split:1,account:colMap.account?row[colMap.account]||"":""};
     }).filter(t=>t.date&&t.name);
     const existingKeys=new Set(txns.map(txnKey));
