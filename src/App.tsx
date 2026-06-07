@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, Fragment } from "react";
+import { useState, useRef, useMemo, useEffect, Fragment, type SetStateAction } from "react";
 import Papa from "papaparse";
 import { parseDate } from "./parseDate";
 import _ from "lodash";
@@ -39,17 +39,17 @@ const RULES = [
   {c:"Retirement",    k:["401K","IRA","ROTH","HSA","PENSION","RETIREMENT CONTRIB","TIAA","VOYA"]},
   {c:"Savings",       k:["SAVINGS TRANSFER","HIGH YIELD","MARCUS","ALLY BANK","SYNCHRONY"]},
   {c:"Investment",    k:["FIDELITY","SCHWAB","VANGUARD","ETRADE","ROBINHOOD","BROKERAGE","AMERITRADE","BETTERMENT"]},
-  {c:"Food & Drink",  k:["BREWING","COFFEE","CAFE","RESTAURANT","PIZZA","BAR","TAVERN","SQ *","STARBUCKS","DOORDASH","GRUBHUB","TACO","KITCHEN","GRILL","DUTCH BROS","BAKERY","TAPROOM","DONUT","DOUGHNUT"]},
+  {c:"Food & Drink",  k:["BREWING","COFFEE","CAFE","RESTAURANT","PIZZA","BAR","TAVERN","SQ *","STARBUCKS","DOORDASH","GRUBHUB","TACO","KITCHEN","GRILL","DUTCH BROS","BAKERY","TAPROOM","DONUT","DOUGHNUT","PHO","RAMEN","SANDWICH","SUBWAY","CHICKEN","WAFFLE","JUICE","SMOOTHIE","BAHN MI","BAGEL","CURRY","ICE CREAM","GELATO","POPEYES"]},
   {c:"Groceries",     k:["SAFEWAY","KROGER","WHOLE FOODS","TRADER JOE","FRED MEYER","WINCO","GROCERY","NEW SEASONS","NATURAL GROCERS","H-MART"]},
   {c:"Transport",     k:["LYFT","UBER","PARKING","SHELL","CHEVRON","ARCO","GAS","TRIMET","TRANSIT"]},
   {c:"Entertainment", k:["NETFLIX","SPOTIFY","HULU","DISNEY","HBO","YOUTUBE","TICKETMASTER","CINEMA","THEATER","AMC","TOMO","GYM","MOVEMENT","CIRCUIT"]},
   {c:"Shopping",      k:["AMAZON","TARGET","WALMART","COSTCO","EBAY","ETSY","NIKE","REI","NEXT ADVENTURE"]},
   {c:"Health",        k:["PHARMACY","CVS","WALGREENS","GYM","FITNESS","YOGA","PLANET FITNESS","DENTAL","MEDICAL","PROVIDENCE","KAISER"]},
-  {c:"Utilities",     k:["ELECTRIC","INTERNET","COMCAST","XFINITY","PGE","AT&T","VERIZON","T-MOBILE","ELECTRICITY","WATER","GAS BILL"]},
+  {c:"Utilities",     k:["ELECTRIC","INTERNET","COMCAST","XFINITY","PGE","AT&T","VERIZON","T-MOBILE","ELECTRICITY","WATER","GAS BILL","NW NATURAL"]},
   {c:"Income",        k:["PAYROLL","DIRECT DEPOSIT","SALARY","WAGES","DEPOSIT","REWARDS","INTEREST"]},
   {c:"Transfer",      k:["TRANSFER","ZELLE","VENMO","PAYPAL","CASH APP","ACH"]},
 ];
-const autoCat = n => { const u=(n||"").toUpperCase(); for(const r of RULES) if(r.k.some(k=>u.includes(k))) return r.c; return "Other"; };
+const autoCat = n => { const u=(n||"").toUpperCase(); for(const r of RULES) if(r.k.some(k=>u.toUpperCase().includes(k.toUpperCase()))) return r.c; return "Other"; };
 
 // ── Column detection ──────────────────────────────────────────────────────────
 const HINTS = {
@@ -224,6 +224,7 @@ export default function App() {
   const [csvHdrs,    setCsvHdrs]    = useState([]);
   const [csvRows,    setCsvRows]    = useState([]);
   const [colMap,     setColMap]     = useState({date:"",amount:"",description:"",category:"",account:""});
+  const [loaded,     setLoaded]     = useState(false);
   const fileRef = useRef();
 
   useEffect(()=>{
@@ -234,11 +235,13 @@ export default function App() {
   },[menuId]);
 
   useEffect(()=>{
-    (async()=>{try{const r=await window.storage.get("fw8");if(r){const d=JSON.parse(r.value);setTxns(d.txns||[]);setCats(d.cats||INIT_CATS);setImported(d.txns?.length>0);}}catch{}})();
+    try{const raw=localStorage.getItem("fw8");if(raw){const d=JSON.parse(raw);setTxns(d.txns||[]);setCats(d.cats||INIT_CATS);setImported(d.txns?.length>0);}}catch(e){console.warn("Failed to load saved data:",e);}
+    setLoaded(true);
   },[]);
   useEffect(()=>{
-    if(imported||txns.length>0) window.storage.set("fw8",JSON.stringify({txns,cats})).catch(()=>{});
-  },[txns,cats,imported]);
+    if(!loaded) return;
+    try{localStorage.setItem("fw8",JSON.stringify({txns,cats}));}catch(e){console.warn("Failed to save data:",e);}
+  },[txns,cats,loaded]);
 
   const catColor = n => cats.find(c=>c.name===n)?.color||"#94a3b8";
   const navTo = v => { setView(v);setShowUpload(false);setCatFilter(null);setSearch("");setEditTxn(null);setEditCat(null);setMenuId(null);setInlineEdit(null);setImportResult(null); };
@@ -299,16 +302,17 @@ export default function App() {
   },[periodTxns,nonExpense]);
 
   // ── CSV handlers ───────────────────────────────────────────────────────────
-  const handleFile=f=>{if(!f)return;Papa.parse(f,{header:true,skipEmptyLines:true,complete:({data,meta})=>{setCsvHdrs(meta.fields||[]);setCsvRows(data);setColMap(detectCols(meta.fields||[]));setCsvStep("map");}});};
-  const handleColMap=m=>{if(m._reset){setCsvStep("drop");setCsvHdrs([]);setCsvRows([]);setColMap({date:"",amount:"",description:"",category:"",account:""});}else setColMap(m);};
+  const descBlacklist = ["MOBILE PAYMENT THANK YOU","PAID"];
+  const handleFile=(f: any)=>{if(!f)return;Papa.parse(f,{header:true,skipEmptyLines:true,complete:({data,meta})=>{setCsvHdrs(meta.fields||[]);setCsvRows(data);setColMap(detectCols(meta.fields||[]));setCsvStep("map");}});};
+  const handleColMap=(m: SetStateAction<{ date: string; amount: string; description: string; category: string; account: string; }>)=>{if(m._reset){setCsvStep("drop");setCsvHdrs([]);setCsvRows([]);setColMap({date:"",amount:"",description:"",category:"",account:""});}else setColMap(m);};
   const handleImport=()=>{
     const parsed=csvRows.map((row,i)=>{
       const name=(row[colMap.description]||"").trim();
       const amt=parseFloat((row[colMap.amount]||"0").replace(/[$,\s]/g,""))||0;
       const cat=colMap.category&&row[colMap.category]?row[colMap.category]:autoCat(name);
       const date=parseDate(row[colMap.date]||"");
-      return {id:`${date}|${amt}|${name.slice(0,40)}`,date,name,amount:amt,category:cat,split:1,account:colMap.account?row[colMap.account]||"":""};
-    }).filter(t=>t.date&&t.name);
+      return {id:`${date}|${amt}|${name}`,date,name,amount:amt,category:cat,split:1,account:colMap.account?row[colMap.account]||"":""};
+    }).filter(t=>t.date&&t.name&&t.amount!==0&&!descBlacklist.some(b=>t.name.toUpperCase().includes(b.toUpperCase())));
     const existingKeys=new Set(txns.map(txnKey));
     const newOnes=parsed.filter(t=>!existingKeys.has(txnKey(t)));
     setTxns(prev=>[...prev,...newOnes].sort((a,b)=>b.date.localeCompare(a.date)));
