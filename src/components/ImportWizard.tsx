@@ -14,9 +14,11 @@ interface ImportWizardProps {
   onCancel?: () => void;
   fileRef: RefObject<HTMLInputElement | null>;
   showCancel: boolean;
+  flipSign: boolean;
+  onFlipSign: (v: boolean) => void;
 }
 
-export function ImportWizard({ step, headers, rows, colMap, onColMap, onFile, onImport, onBack, onCancel, fileRef, showCancel }: ImportWizardProps) {
+export function ImportWizard({ step, headers, rows, colMap, onColMap, onFile, onImport, onBack, onCancel, fileRef, showCancel, flipSign, onFlipSign }: ImportWizardProps) {
   const can = colMap.date && colMap.amount && colMap.description;
   return (
     <>
@@ -89,6 +91,18 @@ export function ImportWizard({ step, headers, rows, colMap, onColMap, onFile, on
                 </select>
               </div>
             ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <input
+              type="checkbox"
+              id="flip-sign"
+              checked={flipSign}
+              onChange={e => onFlipSign(e.target.checked)}
+              style={{ cursor: "pointer" }}
+            />
+            <label htmlFor="flip-sign" style={{ fontSize: 12, color: "#64748b", cursor: "pointer" }}>
+              Flip sign — treat positives as expenses (−)
+            </label>
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10, fontWeight: 500, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".07em" }}>Preview · first 3 rows</div>

@@ -27,6 +27,7 @@ export function useCsvImport({ txns, onImport }: UseCsvImportOptions) {
   const [csvHdrs, setCsvHdrs] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
   const [colMap, setColMap] = useState<ColMap>(INIT_COLS);
+  const [flipSign, setFlipSign] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (f: File | null | undefined) => {
@@ -49,13 +50,14 @@ export function useCsvImport({ txns, onImport }: UseCsvImportOptions) {
     setCsvHdrs([]);
     setCsvRows([]);
     setColMap(INIT_COLS);
+    setFlipSign(false);
   };
 
   const handleImport = () => {
     const parsed = csvRows
       .map(row => {
         const name = (row[colMap.description] || "").trim();
-        const amt = parseFloat((row[colMap.amount] || "0").replace(/[$,\s]/g, "")) || 0;
+        const amt = (parseFloat((row[colMap.amount] || "0").replace(/[$,\s]/g, "")) || 0) * (flipSign ? -1 : 1);
         const cat = colMap.category && row[colMap.category] ? row[colMap.category] : autoCat(name);
         const date = parseDate(row[colMap.date] || "");
         return {
@@ -84,5 +86,5 @@ export function useCsvImport({ txns, onImport }: UseCsvImportOptions) {
 
   const triggerFileDialog = () => fileRef.current?.click();
 
-  return { csvStep, csvHdrs, csvRows, colMap, setColMap, fileRef, handleFile, handleBack, handleImport, triggerFileDialog };
+  return { csvStep, csvHdrs, csvRows, colMap, setColMap, flipSign, setFlipSign, fileRef, handleFile, handleBack, handleImport, triggerFileDialog };
 }

@@ -32,6 +32,8 @@ interface TransactionsViewProps {
   onImport: () => void;
   onBack: () => void;
   fileRef: RefObject<HTMLInputElement | null>;
+  flipSign: boolean;
+  onFlipSign: (v: boolean) => void;
 }
 
 const card: React.CSSProperties = { background: "#fff", border: "0.5px solid #e4e9f0", borderRadius: 12, padding: "16px 18px" };
@@ -40,7 +42,7 @@ const PAGE_SIZE = 25;
 export function TransactionsView({
   txns, cats, catFilter, setCatFilter, presentCats, filtered,
   importResult, onClearImportResult, onTxnsChange,
-  csvStep, csvHdrs, csvRows, colMap, onColMap, onFile, onImport, onBack, fileRef,
+  csvStep, csvHdrs, csvRows, colMap, onColMap, onFile, onImport, onBack, fileRef, flipSign, onFlipSign,
 }: TransactionsViewProps) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -131,7 +133,7 @@ export function TransactionsView({
           <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>Import your transactions</div>
           <div style={{ fontSize: 12, color: "#94a3b8" }}>Upload a CSV export from your bank or brokerage to get started.</div>
         </div>
-        <ImportWizard step={csvStep} headers={csvHdrs} rows={csvRows} colMap={colMap} onColMap={onColMap} onFile={onFile} onImport={onImport} onBack={onBack} fileRef={fileRef} showCancel={false} />
+        <ImportWizard step={csvStep} headers={csvHdrs} rows={csvRows} colMap={colMap} onColMap={onColMap} onFile={onFile} onImport={onImport} onBack={onBack} fileRef={fileRef} showCancel={false} flipSign={flipSign} onFlipSign={onFlipSign} />
       </div>
     );
   }

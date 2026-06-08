@@ -8,17 +8,17 @@ const fileRef = createRef<HTMLInputElement>();
 
 describe("ImportWizard — drop step", () => {
   it("shows upload prompt on step=drop", () => {
-    render(<ImportWizard step="drop" headers={[]} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} />);
+    render(<ImportWizard step="drop" headers={[]} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={vi.fn()} />);
     expect(screen.getByText(/drop your csv here/i)).toBeInTheDocument();
   });
 
   it("shows cancel button when showCancel=true", () => {
-    render(<ImportWizard step="drop" headers={[]} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} onCancel={vi.fn()} fileRef={fileRef} showCancel />);
+    render(<ImportWizard step="drop" headers={[]} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} onCancel={vi.fn()} fileRef={fileRef} showCancel flipSign={false} onFlipSign={vi.fn()} />);
     expect(screen.getByText("✕")).toBeInTheDocument();
   });
 
   it("hides cancel button when showCancel=false", () => {
-    render(<ImportWizard step="drop" headers={[]} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} />);
+    render(<ImportWizard step="drop" headers={[]} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={vi.fn()} />);
     expect(screen.queryByText("✕")).not.toBeInTheDocument();
   });
 });
@@ -28,24 +28,36 @@ describe("ImportWizard — map step", () => {
   const colMap = { ...INIT_COLS, date: "Date", amount: "Amount", description: "Description" };
 
   it("shows column count", () => {
-    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} />);
+    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={vi.fn()} />);
     expect(screen.getByText(/3 columns detected/)).toBeInTheDocument();
   });
 
   it("Import button is enabled when required columns are mapped", () => {
-    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} />);
+    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={vi.fn()} />);
     expect(screen.getByRole("button", { name: /import/i })).toBeEnabled();
   });
 
   it("Import button is disabled when required columns are missing", () => {
-    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} />);
+    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={INIT_COLS} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={vi.fn()} />);
     expect(screen.getByRole("button", { name: /import/i })).toBeDisabled();
   });
 
   it("Back button calls onBack", () => {
     const onBack = vi.fn();
-    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={onBack} fileRef={fileRef} showCancel={false} />);
+    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={onBack} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /back/i }));
     expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it("renders flip sign toggle in map step", () => {
+    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={vi.fn()} />);
+    expect(screen.getByLabelText(/flip sign/i)).toBeInTheDocument();
+  });
+
+  it("calls onFlipSign when toggle is clicked", () => {
+    const onFlipSign = vi.fn();
+    render(<ImportWizard step="map" headers={headers} rows={[]} colMap={colMap} onColMap={vi.fn()} onFile={vi.fn()} onImport={vi.fn()} onBack={vi.fn()} fileRef={fileRef} showCancel={false} flipSign={false} onFlipSign={onFlipSign} />);
+    fireEvent.click(screen.getByLabelText(/flip sign/i));
+    expect(onFlipSign).toHaveBeenCalledWith(true);
   });
 });

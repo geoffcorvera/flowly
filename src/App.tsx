@@ -81,6 +81,7 @@ export default function App() {
           onColMap={csvImport.setColMap} onFile={csvImport.handleFile}
           onImport={csvImport.handleImport} onBack={csvImport.handleBack}
           fileRef={csvImport.fileRef}
+          flipSign={csvImport.flipSign} onFlipSign={csvImport.setFlipSign}
         />
       );
     }
@@ -98,6 +99,7 @@ export default function App() {
             colMap={csvImport.colMap} onColMap={csvImport.setColMap}
             onFile={csvImport.handleFile} onImport={csvImport.handleImport}
             onBack={csvImport.handleBack} fileRef={csvImport.fileRef} showCancel={false}
+            flipSign={csvImport.flipSign} onFlipSign={csvImport.setFlipSign}
           />
         </div>
       );
@@ -160,6 +162,7 @@ export default function App() {
               onBack={csvImport.handleBack}
               onCancel={() => { setShowUpload(false); csvImport.handleBack(); }}
               fileRef={csvImport.fileRef} showCancel
+              flipSign={csvImport.flipSign} onFlipSign={csvImport.setFlipSign}
             />
           </div>
         </div>
