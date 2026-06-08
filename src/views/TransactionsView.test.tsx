@@ -103,4 +103,26 @@ describe("TransactionsView — with transactions", () => {
     render(<TransactionsView {...baseProps} txns={txns} filtered={[]} onTxnsChange={onTxnsChange} />);
     expect(screen.getByText(/no transactions match/i)).toBeInTheDocument();
   });
+
+  describe("inline amount edit", () => {
+    it("saves a valid numeric value on blur", () => {
+      render(<TransactionsView {...baseProps} txns={txns} filtered={txns} onTxnsChange={onTxnsChange} />);
+      fireEvent.click(screen.getAllByTitle("Click to edit (original pre-split amount)")[0]);
+      const input = screen.getByRole("spinbutton");
+      fireEvent.change(input, { target: { value: "-12.50" } });
+      fireEvent.blur(input);
+      expect(onTxnsChange).toHaveBeenCalledOnce();
+      const updated = onTxnsChange.mock.calls[0][0] as Transaction[];
+      expect(updated.find(t => t.id === "1")?.amount).toBe(-12.5);
+    });
+
+    it("discards non-numeric input without overwriting the original value", () => {
+      render(<TransactionsView {...baseProps} txns={txns} filtered={txns} onTxnsChange={onTxnsChange} />);
+      fireEvent.click(screen.getAllByTitle("Click to edit (original pre-split amount)")[0]);
+      const input = screen.getByRole("spinbutton");
+      fireEvent.change(input, { target: { value: "abc" } });
+      fireEvent.blur(input);
+      expect(onTxnsChange).not.toHaveBeenCalled();
+    });
+  });
 });

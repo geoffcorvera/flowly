@@ -102,8 +102,13 @@ export function TransactionsView({
   const commitInline = () => {
     if (!inlineEdit) return;
     const { id, field, value } = inlineEdit;
-    const v = field === "amount" ? (parseFloat(value) || 0) : value.trim();
-    if (v !== "" && v !== null) onTxnsChange(txns.map(t => t.id === id ? { ...t, [field]: v } : t));
+    if (field === "amount") {
+      const n = parseFloat(value);
+      if (!isNaN(n)) onTxnsChange(txns.map(t => t.id === id ? { ...t, amount: n } : t));
+    } else {
+      const v = value.trim();
+      if (v) onTxnsChange(txns.map(t => t.id === id ? { ...t, [field]: v } : t));
+    }
     setInlineEdit(null);
   };
   const commitCat = (id: string, value: string) => {
