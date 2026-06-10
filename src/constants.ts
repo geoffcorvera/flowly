@@ -19,6 +19,9 @@ export const INIT_CATS: Category[] = [
   { id: "c14", name: "Other",         color: "#94a3b8", type: "expense" },
   { id: "c15", name: "Pets",          color: "#98aa56", type: "expense" },
   { id: "c16", name: "Onyx",          color: "#000000", type: "expense" },
+  { id: "c17", name: "Bills",         color: "#9c16b6", type: "expense" },
+  { id: "c18", name: "Debt",          color: "#9d2424", type: "expense" },
+  { id: "c19", name: "Benefits",      color: "#73a869", type: "expense" },
 ];
 
 export const TYPE_LABELS: Record<string, string> = {
@@ -39,19 +42,21 @@ export const RULES: { c: string; k: string[] }[] = [
   { c: "Groceries",    k: ["SAFEWAY","KROGER","WHOLE FOODS","TRADER JOE","FRED MEYER","WINCO","GROCERY","NEW SEASONS","NATURAL GROCERS","H-MART"] },
   { c: "Transport",    k: ["LYFT","UBER","PARKING","SHELL","CHEVRON","ARCO","GAS","TRIMET","TRANSIT"] },
   { c: "Entertainment",k: ["TICKETMASTER","CINEMA","THEATER","AMC","TOMO","GYM","MOVEMENT","CIRCUIT GYM","FUTSAL","AIRBNB","HOTEL","HOSTEL","VRBO","EXPEDIA","BOOKING","KAYAK"] },
-  { c: "Shopping",     k: ["AMAZON","TARGET","WALMART","COSTCO","EBAY","ETSY","NIKE","REI","NEXT ADVENTURE","MUJI","CYCLES","BOOKS"] },
+  { c: "Shopping",     k: ["AMAZON","TARGET","WALMART","COSTCO","EBAY","ETSY","NIKE","REI","NEXT ADVENTURE","MUJI","CYCLES","BOOKS",""] },
   { c: "Health",       k: ["PHARMACY","CVS","WALGREENS","GYM","FITNESS","YOGA","PLANET FITNESS","DENTAL","MEDICAL","PROVIDENCE","KAISER","COMMON GROUND WELLNES"] },
   { c: "Utilities",    k: ["ELECTRIC","INTERNET","COMCAST","XFINITY","PGE","AT&T","VERIZON","T-MOBILE","ELECTRICITY","WATER","GAS BILL","NW NATURAL"] },
   { c: "Income",       k: ["PAYROLL","DIRECT DEPOSIT","SALARY","WAGES","DEPOSIT","REWARDS","INTEREST"] },
   { c: "Transfer",     k: ["TRANSFER","ZELLE","VENMO","PAYPAL","CASH APP","ACH"] },
   { c: "Subscriptions", k: ["SUBSCRIPTION","MEMBERSHIP","MONTHLY FEE","ANNUAL FEE","RENEWAL","NYTIMES","NETFLIX","SPOTIFY","HULU","DISNEY","HBO","APPLE.COM/BILL","OPENAI","RIDE WITH GPS"] },
-  { c: "Pets",         k: ["PETCO","PETSMART","VET","ANIMAL HOSPITAL", "MUD BAY", "GREEN DOG"] },
-  { c: "Onyx",         k: ["Childcare", "Child care"] },
+  { c: "Pets",         k: ["PETCO","PETSMART","VET","ANIMAL HOSPITAL", "MUD BAY", "MUDBAY", "GREEN DOG"] },
+  { c: "Onyx",         k: ["Childcare", "Child care", "DIAPER"] },
+  { c: "Bills",        k: ["INSURANCE","DROPBOX"] },
+  { c: "Debt",         k: ["DEPT EDUCATION", "MORTGAGE"] },
 ];
 
 // ── Spending sub-totals ───────────────────────────────────────────────────────
-export const NEEDS_CATS = ["Utilities", "Groceries", "Pets", "Onyx", "Health"] as const;
-export const WANTS_CATS = ["Entertainment", "Shopping", "Food & Drink"] as const;
+export const NEEDS_CATS = ["Utilities", "Groceries", "Pets", "Onyx", "Health", "Bills", "Debt"] as const;
+export const WANTS_CATS = ["Entertainment", "Shopping", "Food & Drink", "Subscriptions"] as const;
 
 // ── Column detection hints ─────────────────────────────────────────────────────
 export const HINTS: Record<string, string[]> = {
@@ -105,13 +110,13 @@ export const DEFAULT_SANKEY_CONFIG: SankeyDiagramConfig = {
       id: "geoff-salary",
       name: "Geoff Salary",
       color: "#10b981",
-      valueSource: { type: "manual", amount: 0 },
+      valueSource: { type: "manual", amount: 0 }, // TODO: amount should be a function of number of days in time-period & annual salary
       children: [
         {
           id: "benefits",
           name: "Benefits",
           color: "#6b7280",
-          valueSource: { type: "manual", amount: 0 },
+          valueSource: { type: "transactions", categories: ["Benefits"] },
           children: [],
         },
         {
@@ -134,24 +139,17 @@ export const DEFAULT_SANKEY_CONFIG: SankeyDiagramConfig = {
               valueSource: { type: "transactions", categories: ["Savings"] },
               children: [
                 {
-                  id: "childcare-fund",
-                  name: "Child Care Fund",
-                  color: "#000000",
-                  valueSource: { type: "transactions", categories: ["Onyx"], nameContains: "fund" },
-                  children: [],
-                },
-                {
                   id: "house-maintenance",
                   name: "House Maintenance",
                   color: "#22c55e",
-                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "House Fund" },
+                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "House" },
                   children: [],
                 },
                 {
                   id: "personal-savings",
                   name: "Personal",
                   color: "#3b82f6",
-                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "payment to geoff" },
+                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "REAL TIME PAYMENT TO Geoffrey Corvera" },
                   children: [],
                 },
                 {
@@ -195,14 +193,14 @@ export const DEFAULT_SANKEY_CONFIG: SankeyDiagramConfig = {
                   id: "needs",
                   name: "Needs",
                   color: "#f97316",
-                  valueSource: { type: "transactions", categories: ["Utilities", "Groceries", "Pets", "Onyx", "Health"] },
+                  valueSource: { type: "transactions", categories: ["Utilities", "Groceries", "Pets", "Onyx", "Health", "Bills", "Debt"] },
                   children: [],
                 },
                 {
                   id: "wants",
                   name: "Wants",
                   color: "#ec4899",
-                  valueSource: { type: "transactions", categories: ["Entertainment", "Shopping", "Food & Drink"] },
+                  valueSource: { type: "transactions", categories: ["Entertainment", "Shopping", "Food & Drink", "Transport", "Subscriptions"] },
                   children: [],
                 },
               ],
