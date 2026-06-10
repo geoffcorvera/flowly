@@ -29,6 +29,8 @@ export interface Totals {
   investments: number;
   retirement: number;
   spending: number;
+  needs: number;
+  wants: number;
   net: number;
 }
 
@@ -46,4 +48,25 @@ export interface MonthlyDataPoint {
 export interface ImportResult {
   added: number;
   skipped: number;
+}
+
+export type SankeyValueSource =
+  | { type: 'manual'; amount: number }
+  | { type: 'transactions'; categories?: string[]; nameContains?: string; spendingOnly?: boolean }
+
+export interface SankeyNodeConfig {
+  id: string;
+  name: string;
+  color?: string;
+  valueSource: SankeyValueSource;
+  children: SankeyNodeConfig[];
+}
+
+export interface SankeyDiagramConfig {
+  roots: SankeyNodeConfig[];
+}
+
+export interface CustomPeriod {
+  from: string;
+  to: string;
 }

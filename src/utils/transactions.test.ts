@@ -16,6 +16,9 @@ describe("autoCat", () => {
   it("is case-insensitive", () => expect(autoCat("starbucks latte")).toBe("Food & Drink"));
   it("falls back to Other for unknown", () => expect(autoCat("RANDOM XYZ CO")).toBe("Other"));
   it("handles empty string", () => expect(autoCat("")).toBe("Other"));
+  it("categorizes AIRBNB as Entertainment", () => expect(autoCat("AIRBNB PAYMENT")).toBe("Entertainment"));
+  it("categorizes HOTEL as Entertainment", () => expect(autoCat("MARRIOTT HOTEL STAY")).toBe("Entertainment"));
+  it("categorizes VRBO as Entertainment", () => expect(autoCat("VRBO* RESERVATION")).toBe("Entertainment"));
 });
 
 describe("detectCols", () => {

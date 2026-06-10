@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import _ from "lodash";
 import { filterPeriod, getToday } from "../utils/date";
 import { eff } from "../utils/transactions";
-import type { Transaction, Category, Totals, MonthlyDataPoint } from "../types";
+import { NEEDS_CATS, WANTS_CATS } from "../constants";
+import type { Transaction, Category, Totals, MonthlyDataPoint, CustomPeriod } from "../types";
 
 interface ComputedDataInput {
   txns: Transaction[];
@@ -10,6 +11,7 @@ interface ComputedDataInput {
   period: string;
   catFilter: string | null;
   search: string;
+  customPeriod?: CustomPeriod;
 }
 
 interface ComputedData {
@@ -33,6 +35,7 @@ export function useComputedData({
   period,
   catFilter,
   search,
+  customPeriod,
 }: ComputedDataInput): ComputedData {
   const incomeCats  = useMemo(() => cats.filter(c => c.type === "income").map(c => c.name), [cats]);
   const savingsCats = useMemo(() => cats.filter(c => c.type === "savings").map(c => c.name), [cats]);
@@ -44,7 +47,7 @@ export function useComputedData({
     [incomeCats, savingsCats, investCats, retireCats, xferCats],
   );
 
-  const periodTxns = useMemo(() => filterPeriod(txns, period, getToday()), [txns, period]);
+  const periodTxns = useMemo(() => filterPeriod(txns, period, getToday(), customPeriod), [txns, period, customPeriod]);
 
   const presentCats = useMemo(() => {
     const s = new Set(periodTxns.map(t => t.category).filter(Boolean));
@@ -64,10 +67,12 @@ export function useComputedData({
     const sav = Math.abs(periodTxns.filter(t => savingsCats.includes(t.category) && t.amount < 0).reduce((s, t) => s + eff(t), 0));
     const inv = Math.abs(periodTxns.filter(t => investCats.includes(t.category) && t.amount < 0).reduce((s, t) => s + eff(t), 0));
     const ret = Math.abs(periodTxns.filter(t => retireCats.includes(t.category) && t.amount < 0).reduce((s, t) => s + eff(t), 0));
-    const sp  = Math.abs(periodTxns.filter(t => t.amount < 0 && !nonExpense.includes(t.category)).reduce((s, t) => s + eff(t), 0));
+    const sp    = Math.abs(periodTxns.filter(t => t.amount < 0 && !nonExpense.includes(t.category)).reduce((s, t) => s + eff(t), 0));
+    const needs = Math.abs(periodTxns.filter(t => t.amount < 0 && (NEEDS_CATS as readonly string[]).includes(t.category)).reduce((s, t) => s + eff(t), 0));
+    const wants = Math.abs(periodTxns.filter(t => t.amount < 0 && (WANTS_CATS as readonly string[]).includes(t.category)).reduce((s, t) => s + eff(t), 0));
     return {
       income: Math.round(inc), savings: Math.round(sav), investments: Math.round(inv),
-      retirement: Math.round(ret), spending: Math.round(sp), net: Math.round(inc - sav - inv - ret - sp),
+      retirement: Math.round(ret), spending: Math.round(sp), needs: Math.round(needs), wants: Math.round(wants), net: Math.round(inc - sav - inv - ret - sp),
     };
   }, [periodTxns, incomeCats, savingsCats, investCats, retireCats, nonExpense]);
 

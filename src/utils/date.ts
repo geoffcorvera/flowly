@@ -6,8 +6,12 @@ export const filterPeriod = (
   txns: Transaction[],
   p: string,
   today = getToday(),
+  customPeriod?: { from: string; to: string },
 ): Transaction[] => {
   if (p === "All") return txns;
+  if (p === "Custom" && customPeriod) {
+    return txns.filter(t => t.date >= customPeriod.from && t.date <= customPeriod.to);
+  }
   const now = new Date(today);
   if (p === "YTD") {
     const cutoff = `${now.getFullYear()}-01-01`;

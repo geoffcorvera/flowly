@@ -47,6 +47,35 @@ describe("useComputedData — totals", () => {
     const { result } = renderHook(() => useComputedData({ txns, ...baseInput }));
     expect(result.current.totals.spending).toBe(100);
   });
+
+  it("needs sums Utilities + Groceries + Pets + Onyx + Health only", () => {
+    const txns = [
+      tx({ amount: -100, category: "Utilities" }),
+      tx({ amount: -200, category: "Groceries" }),
+      tx({ amount: -50,  category: "Pets" }),
+      tx({ amount: -75,  category: "Health" }),
+      tx({ amount: -100, category: "Food & Drink" }),
+    ];
+    const { result } = renderHook(() => useComputedData({ txns, ...baseInput }));
+    expect(result.current.totals.needs).toBe(425);
+  });
+
+  it("wants sums Entertainment + Shopping + Food & Drink only", () => {
+    const txns = [
+      tx({ amount: -100, category: "Entertainment" }),
+      tx({ amount: -200, category: "Shopping" }),
+      tx({ amount: -50,  category: "Food & Drink" }),
+      tx({ amount: -75,  category: "Utilities" }),
+    ];
+    const { result } = renderHook(() => useComputedData({ txns, ...baseInput }));
+    expect(result.current.totals.wants).toBe(350);
+  });
+
+  it("needs respects split", () => {
+    const txns = [tx({ amount: -200, split: 2, category: "Groceries" })];
+    const { result } = renderHook(() => useComputedData({ txns, ...baseInput }));
+    expect(result.current.totals.needs).toBe(100);
+  });
 });
 
 describe("useComputedData — catData", () => {

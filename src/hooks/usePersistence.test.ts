@@ -1,11 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { usePersistence } from "./usePersistence";
-import { INIT_CATS } from "../constants";
+import { INIT_CATS, DEFAULT_SANKEY_CONFIG } from "../constants";
 import type { Transaction, Category } from "../types";
 
 const TX: Transaction = { id: "1", date: "2026-01-01", name: "Test", amount: -10, category: "Other", split: 1, account: "" };
 const CAT: Category = { id: "c99", name: "Custom", color: "#ff0000", type: "expense" };
+
+const hook = (overrides?: Partial<Parameters<typeof usePersistence>>) => {
+  const defaults: Parameters<typeof usePersistence> = [[], INIT_CATS, DEFAULT_SANKEY_CONFIG, vi.fn(), vi.fn(), vi.fn()];
+  return (overrides ? Object.assign(defaults, overrides) : defaults) as Parameters<typeof usePersistence>;
+};
 
 beforeEach(() => localStorage.clear());
 
@@ -14,7 +19,8 @@ describe("usePersistence", () => {
     localStorage.setItem("fw8", JSON.stringify({ txns: [TX], cats: [CAT] }));
     const setTxns = vi.fn();
     const setCats = vi.fn();
-    renderHook(() => usePersistence([], INIT_CATS, setTxns, setCats));
+    const setSankeyConfig = vi.fn();
+    renderHook(() => usePersistence([], INIT_CATS, DEFAULT_SANKEY_CONFIG, setTxns, setCats, setSankeyConfig));
     expect(setTxns).toHaveBeenCalledWith([TX]);
     expect(setCats).toHaveBeenCalledWith([CAT]);
   });
@@ -22,7 +28,7 @@ describe("usePersistence", () => {
   it("does not call setTxns when storage is empty", () => {
     const setTxns = vi.fn();
     const setCats = vi.fn();
-    renderHook(() => usePersistence([], INIT_CATS, setTxns, setCats));
+    renderHook(() => usePersistence([], INIT_CATS, DEFAULT_SANKEY_CONFIG, setTxns, setCats, vi.fn()));
     expect(setTxns).not.toHaveBeenCalled();
   });
 
@@ -30,7 +36,7 @@ describe("usePersistence", () => {
     const setTxns = vi.fn();
     const setCats = vi.fn();
     const { rerender } = renderHook(
-      ({ cats }) => usePersistence([], cats, setTxns, setCats),
+      ({ cats }) => usePersistence([], cats, DEFAULT_SANKEY_CONFIG, setTxns, setCats, vi.fn()),
       { initialProps: { cats: INIT_CATS } },
     );
     act(() => rerender({ cats: [...INIT_CATS, CAT] }));
@@ -43,7 +49,7 @@ describe("usePersistence", () => {
     const setTxns = vi.fn();
     const setCats = vi.fn();
     const { rerender } = renderHook(
-      ({ txns }) => usePersistence(txns, INIT_CATS, setTxns, setCats),
+      ({ txns }) => usePersistence(txns, INIT_CATS, DEFAULT_SANKEY_CONFIG, setTxns, setCats, vi.fn()),
       { initialProps: { txns: [] as Transaction[] } },
     );
     act(() => rerender({ txns: [TX] }));
@@ -52,7 +58,7 @@ describe("usePersistence", () => {
   });
 
   it("returns loaded=true after mount", () => {
-    const { result } = renderHook(() => usePersistence([], INIT_CATS, vi.fn(), vi.fn()));
+    const { result } = renderHook(() => usePersistence([], INIT_CATS, DEFAULT_SANKEY_CONFIG, vi.fn(), vi.fn(), vi.fn()));
     expect(result.current.loaded).toBe(true);
   });
 });

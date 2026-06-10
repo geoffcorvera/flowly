@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { INIT_CATS, PERIODS, NAV } from "./constants";
+import { INIT_CATS, PERIODS, NAV, DEFAULT_SANKEY_CONFIG } from "./constants";
 import { usePersistence } from "./hooks/usePersistence";
 import { useCsvImport } from "./hooks/useCsvImport";
 import { useComputedData } from "./hooks/useComputedData";
@@ -8,20 +8,23 @@ import { KpiBar } from "./components/KpiBar";
 import { ImportWizard } from "./components/ImportWizard";
 import { OverviewView } from "./views/OverviewView";
 import { CashflowView } from "./views/CashflowView";
+import { FlowChartView } from "./views/FlowChartView";
 import { TransactionsView } from "./views/TransactionsView";
 import { CategoriesView } from "./views/CategoriesView";
-import type { Transaction, Category, ImportResult } from "./types";
+import type { Transaction, Category, ImportResult, SankeyDiagramConfig, CustomPeriod } from "./types";
 
 export default function App() {
   const [txns,         setTxns]         = useState<Transaction[]>([]);
   const [cats,         setCats]         = useState<Category[]>(INIT_CATS);
+  const [sankeyConfig, setSankeyConfig] = useState<SankeyDiagramConfig>(DEFAULT_SANKEY_CONFIG);
   const [period,       setPeriod]       = useState("6M");
+  const [customPeriod, setCustomPeriod] = useState<CustomPeriod>({ from: "", to: "" });
   const [view,         setView]         = useState("overview");
   const [catFilter,    setCatFilter]    = useState<string | null>(null);
   const [showUpload,   setShowUpload]   = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
-  usePersistence(txns, cats, setTxns, setCats);
+  usePersistence(txns, cats, sankeyConfig, setTxns, setCats, setSankeyConfig);
 
   const csvImport = useCsvImport({
     txns,
@@ -33,8 +36,8 @@ export default function App() {
     },
   });
 
-  const { periodTxns, presentCats, filtered, totals, monthlyData, catData, xferCats } =
-    useComputedData({ txns, cats, period, catFilter, search: "" });
+  const { periodTxns, presentCats, filtered, totals, monthlyData, catData, xferCats, nonExpense } =
+    useComputedData({ txns, cats, period, catFilter, search: "", customPeriod });
 
   const catColor = (n: string) => cats.find(c => c.name === n)?.color ?? "#94a3b8";
   const catTotal = catData.reduce((s, c) => s + c.value, 0);
@@ -57,6 +60,18 @@ export default function App() {
   const renderView = () => {
     if (view === "cashflow") {
       return <CashflowView monthlyData={monthlyData} />;
+    }
+
+    if (view === "flowchart") {
+      return (
+        <FlowChartView
+          periodTxns={periodTxns}
+          cats={cats}
+          nonExpense={nonExpense}
+          sankeyConfig={sankeyConfig}
+          onSankeyConfigChange={setSankeyConfig}
+        />
+      );
     }
 
     if (view === "categories") {
@@ -126,13 +141,35 @@ export default function App() {
             <h1 style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>{NAV.find(n => n.id === view)?.label}</h1>
             <p style={{ fontSize: 9, color: "#94a3b8", margin: "2px 0 0", textTransform: "uppercase", letterSpacing: ".07em" }}>Portland, OR</p>
           </div>
-          <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 3, alignItems: "center", flexWrap: "wrap" }}>
             {PERIODS.map(p => (
               <button key={p} onClick={() => { setPeriod(p); setCatFilter(null); }}
                 style={{ padding: "5px 9px", fontSize: 11, border: "0.5px solid", borderRadius: 6, cursor: "pointer", fontWeight: period === p ? 500 : 400, borderColor: period === p ? "#6366f1" : "#dde1e8", background: period === p ? "#6366f1" : "#fff", color: period === p ? "#fff" : "#94a3b8" }}>
                 {p}
               </button>
             ))}
+            <button
+              onClick={() => { setPeriod("Custom"); setCatFilter(null); }}
+              style={{ padding: "5px 9px", fontSize: 11, border: "0.5px solid", borderRadius: 6, cursor: "pointer", fontWeight: period === "Custom" ? 500 : 400, borderColor: period === "Custom" ? "#6366f1" : "#dde1e8", background: period === "Custom" ? "#6366f1" : "#fff", color: period === "Custom" ? "#fff" : "#94a3b8" }}>
+              Custom
+            </button>
+            {period === "Custom" && (
+              <>
+                <input
+                  type="date"
+                  value={customPeriod.from}
+                  onChange={e => setCustomPeriod(p => ({ ...p, from: e.target.value }))}
+                  style={{ padding: "4px 7px", fontSize: 11, border: "0.5px solid #dde1e8", borderRadius: 6, color: "#374151", background: "#fff", outline: "none" }}
+                />
+                <span style={{ fontSize: 11, color: "#94a3b8" }}>to</span>
+                <input
+                  type="date"
+                  value={customPeriod.to}
+                  onChange={e => setCustomPeriod(p => ({ ...p, to: e.target.value }))}
+                  style={{ padding: "4px 7px", fontSize: 11, border: "0.5px solid #dde1e8", borderRadius: 6, color: "#374151", background: "#fff", outline: "none" }}
+                />
+              </>
+            )}
             {txns.length > 0 && (
               <button onClick={triggerImport} style={{ marginLeft: 8, display: "flex", alignItems: "center", gap: 5, padding: "6px 11px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 500 }}>
                 <i className="ti ti-upload" style={{ fontSize: 12 }} aria-hidden />Import more

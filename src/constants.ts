@@ -1,5 +1,5 @@
 import type React from "react";
-import type { Category } from "./types";
+import type { Category, SankeyDiagramConfig } from "./types";
 
 // ── Default categories ────────────────────────────────────────────────────────
 export const INIT_CATS: Category[] = [
@@ -38,7 +38,7 @@ export const RULES: { c: string; k: string[] }[] = [
   { c: "Food & Drink", k: ["FOOD","BREWING","COFFEE","CAFE","RESTAURANT","PIZZA","BAR","TAVERN","SQ *","STARBUCKS","DOORDASH","GRUBHUB","TACO","KITCHEN","GRILL","DUTCH BROS","BAKERY","TAPROOM","DONUT","DOUGHNUT","PHO","RAMEN","SANDWICH","SUBWAY","CHICKEN","WAFFLE","JUICE","SMOOTHIE","BAHN MI","BAGEL","CURRY","ICE CREAM","GELATO","POPEYES", "TAP HOUSE","PAYDIRT","BASILISK","BBQ"] },
   { c: "Groceries",    k: ["SAFEWAY","KROGER","WHOLE FOODS","TRADER JOE","FRED MEYER","WINCO","GROCERY","NEW SEASONS","NATURAL GROCERS","H-MART"] },
   { c: "Transport",    k: ["LYFT","UBER","PARKING","SHELL","CHEVRON","ARCO","GAS","TRIMET","TRANSIT"] },
-  { c: "Entertainment",k: ["TICKETMASTER","CINEMA","THEATER","AMC","TOMO","GYM","MOVEMENT","CIRCUIT GYM","FUTSAL"] },
+  { c: "Entertainment",k: ["TICKETMASTER","CINEMA","THEATER","AMC","TOMO","GYM","MOVEMENT","CIRCUIT GYM","FUTSAL","AIRBNB","HOTEL","HOSTEL","VRBO","EXPEDIA","BOOKING","KAYAK"] },
   { c: "Shopping",     k: ["AMAZON","TARGET","WALMART","COSTCO","EBAY","ETSY","NIKE","REI","NEXT ADVENTURE","MUJI","CYCLES","BOOKS"] },
   { c: "Health",       k: ["PHARMACY","CVS","WALGREENS","GYM","FITNESS","YOGA","PLANET FITNESS","DENTAL","MEDICAL","PROVIDENCE","KAISER","COMMON GROUND WELLNES"] },
   { c: "Utilities",    k: ["ELECTRIC","INTERNET","COMCAST","XFINITY","PGE","AT&T","VERIZON","T-MOBILE","ELECTRICITY","WATER","GAS BILL","NW NATURAL"] },
@@ -48,6 +48,10 @@ export const RULES: { c: string; k: string[] }[] = [
   { c: "Pets",         k: ["PETCO","PETSMART","VET","ANIMAL HOSPITAL", "MUD BAY", "GREEN DOG"] },
   { c: "Onyx",         k: ["Childcare", "Child care"] },
 ];
+
+// ── Spending sub-totals ───────────────────────────────────────────────────────
+export const NEEDS_CATS = ["Utilities", "Groceries", "Pets", "Onyx", "Health"] as const;
+export const WANTS_CATS = ["Entertainment", "Shopping", "Food & Drink"] as const;
 
 // ── Column detection hints ─────────────────────────────────────────────────────
 export const HINTS: Record<string, string[]> = {
@@ -64,6 +68,7 @@ export const PERIODS = ["3M", "6M", "YTD", "1Y", "All"] as const;
 export const NAV = [
   { id: "overview",     icon: "ti-layout-dashboard", label: "Overview" },
   { id: "cashflow",     icon: "ti-arrows-exchange",  label: "Cash flow" },
+  { id: "flowchart",    icon: "ti-hierarchy-2",      label: "Flow Chart" },
   { id: "transactions", icon: "ti-list",             label: "Transactions" },
   { id: "categories",  icon: "ti-tags",             label: "Categories" },
 ] as const;
@@ -91,5 +96,121 @@ export const IE: React.CSSProperties = {
 export const ED: React.CSSProperties = {
   cursor: "text", textDecoration: "underline",
   textDecorationStyle: "dotted", textDecorationColor: "#d1d5db",
+};
+
+// ── Default Sankey diagram config ─────────────────────────────────────────────
+export const DEFAULT_SANKEY_CONFIG: SankeyDiagramConfig = {
+  roots: [
+    {
+      id: "geoff-salary",
+      name: "Geoff Salary",
+      color: "#10b981",
+      valueSource: { type: "manual", amount: 0 },
+      children: [
+        {
+          id: "benefits",
+          name: "Benefits",
+          color: "#6b7280",
+          valueSource: { type: "manual", amount: 0 },
+          children: [],
+        },
+        {
+          id: "retirement",
+          name: "Retirement",
+          color: "#f59e0b",
+          valueSource: { type: "transactions", categories: ["Retirement"] },
+          children: [],
+        },
+        {
+          id: "take-home",
+          name: "Take Home",
+          color: "#06b6d4",
+          valueSource: { type: "transactions", categories: ["Income"] },
+          children: [
+            {
+              id: "save",
+              name: "Save",
+              color: "#06b6d4",
+              valueSource: { type: "transactions", categories: ["Savings"] },
+              children: [
+                {
+                  id: "childcare-fund",
+                  name: "Child Care Fund",
+                  color: "#000000",
+                  valueSource: { type: "transactions", categories: ["Onyx"], nameContains: "fund" },
+                  children: [],
+                },
+                {
+                  id: "house-maintenance",
+                  name: "House Maintenance",
+                  color: "#22c55e",
+                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "House Fund" },
+                  children: [],
+                },
+                {
+                  id: "personal-savings",
+                  name: "Personal",
+                  color: "#3b82f6",
+                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "payment to geoff" },
+                  children: [],
+                },
+                {
+                  id: "cds",
+                  name: "CDs",
+                  color: "#a78bfa",
+                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "CD" },
+                  children: [],
+                },
+              ],
+            },
+            {
+              id: "invest",
+              name: "Invest",
+              color: "#a78bfa",
+              valueSource: { type: "transactions", categories: ["Investment"] },
+              children: [
+                {
+                  id: "vanguard",
+                  name: "Vanguard",
+                  color: "#a78bfa",
+                  valueSource: { type: "transactions", categories: ["Investment"], nameContains: "vanguard" },
+                  children: [],
+                },
+                {
+                  id: "betterment",
+                  name: "Betterment",
+                  color: "#6366f1",
+                  valueSource: { type: "transactions", categories: ["Investment"], nameContains: "betterment" },
+                  children: [],
+                },
+              ],
+            },
+            {
+              id: "spend",
+              name: "Spend",
+              color: "#f43f5e",
+              valueSource: { type: "transactions", spendingOnly: true },
+              children: [
+                {
+                  id: "needs",
+                  name: "Needs",
+                  color: "#f97316",
+                  valueSource: { type: "transactions", categories: ["Utilities", "Groceries", "Pets", "Onyx", "Health"] },
+                  children: [],
+                },
+                {
+                  id: "wants",
+                  name: "Wants",
+                  color: "#ec4899",
+                  valueSource: { type: "transactions", categories: ["Entertainment", "Shopping", "Food & Drink"] },
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
