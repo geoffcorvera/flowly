@@ -7,6 +7,7 @@ import { ImportWizard } from "../components/ImportWizard";
 import { S_IN, s_btn, IE, ED } from "../constants";
 import { $, $d } from "../utils/format";
 import { eff, buildCsvString } from "../utils/transactions";
+import { assignableCats, catColor as lookupCatColor } from "../utils/categories";
 import { getToday } from "../utils/date";
 import type { Transaction, Category, ImportResult } from "../types";
 import type { ColMap } from "../types";
@@ -62,7 +63,7 @@ export function TransactionsView({
     return () => document.removeEventListener("click", h);
   }, [menuId]);
 
-  const catColor = (n: string) => cats.find(c => c.name === n)?.color || "#94a3b8";
+  const catColor = (n: string) => lookupCatColor(cats, n);
 
   const displayFiltered = (() => {
     let t = [...filtered];
@@ -73,7 +74,7 @@ export function TransactionsView({
   const pageTxns = displayFiltered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const openAdd = () => {
-    setTxnForm({ date: getToday(), name: "", amount: "", category: cats.find(c => c.type === "expense")?.name || "Other", split: 1 });
+    setTxnForm({ date: getToday(), name: "", amount: "", category: assignableCats(cats).find(c => c.type === "expense")?.label || "Other", split: 1 });
     setEditTxn("new");
     setMenuId(null);
     setInlineEdit(null);
@@ -221,7 +222,7 @@ export function TransactionsView({
                     onChange={e => commitCat(t.id, e.target.value)}
                     onBlur={() => setInlineEdit(null)}
                     style={{ ...IE, color: catColor(inlineEdit!.value), padding: "1px 0", cursor: "pointer" }}>
-                    {cats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    {assignableCats(cats).map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
                   </select>
                 : <div onClick={() => startInline(t.id, "category", t.category)} title="Click to change category"
                     style={{ fontSize: 11, color: catColor(t.category), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...ED }}>

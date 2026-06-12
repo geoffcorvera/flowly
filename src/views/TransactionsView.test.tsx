@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TransactionsView } from "./TransactionsView";
-import { INIT_CATS } from "../constants";
+import { DEFAULT_CATEGORIES } from "../constants";
 import { INIT_COLS } from "../hooks/useCsvImport.constants";
 import { createRef } from "react";
 import type { Transaction } from "../types";
@@ -13,7 +13,7 @@ const tx = (overrides: Partial<Transaction> = {}): Transaction => ({
 });
 
 const baseProps = {
-  cats: INIT_CATS,
+  cats: DEFAULT_CATEGORIES,
   catFilter: null,
   setCatFilter: vi.fn(),
   presentCats: ["Food & Drink"],

@@ -8,11 +8,19 @@ export interface Transaction {
   account: string;
 }
 
+export type CategoryType =
+  | "expense" | "savings" | "investment" | "retirement" | "income" | "transfer";
+
 export interface Category {
   id: string;
-  name: string;
+  label: string;
   color: string;
-  type: "expense" | "savings" | "investment" | "retirement" | "income" | "transfer";
+  type: CategoryType;
+  /** When true, this category is structural/aggregating and cannot be assigned to a transaction. */
+  hidden?: boolean;
+  /** When set, overrides the value computed from matching transactions. */
+  manualValue?: number;
+  subcategories: Category[];
 }
 
 export interface ColMap {
@@ -48,22 +56,6 @@ export interface MonthlyDataPoint {
 export interface ImportResult {
   added: number;
   skipped: number;
-}
-
-export type SankeyValueSource =
-  | { type: 'manual'; amount: number }
-  | { type: 'transactions'; categories?: string[]; nameContains?: string; spendingOnly?: boolean }
-
-export interface SankeyNodeConfig {
-  id: string;
-  name: string;
-  color?: string;
-  valueSource: SankeyValueSource;
-  children: SankeyNodeConfig[];
-}
-
-export interface SankeyDiagramConfig {
-  roots: SankeyNodeConfig[];
 }
 
 export interface CustomPeriod {

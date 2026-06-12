@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import _ from "lodash";
 import { filterPeriod, getToday } from "../utils/date";
 import { eff } from "../utils/transactions";
+import { flattenCats } from "../utils/categories";
 import { NEEDS_CATS, WANTS_CATS } from "../constants";
 import type { Transaction, Category, Totals, MonthlyDataPoint, CustomPeriod } from "../types";
 
@@ -37,11 +38,12 @@ export function useComputedData({
   search,
   customPeriod,
 }: ComputedDataInput): ComputedData {
-  const incomeCats  = useMemo(() => cats.filter(c => c.type === "income").map(c => c.name), [cats]);
-  const savingsCats = useMemo(() => cats.filter(c => c.type === "savings").map(c => c.name), [cats]);
-  const investCats  = useMemo(() => cats.filter(c => c.type === "investment").map(c => c.name), [cats]);
-  const retireCats  = useMemo(() => cats.filter(c => c.type === "retirement").map(c => c.name), [cats]);
-  const xferCats    = useMemo(() => cats.filter(c => c.type === "transfer").map(c => c.name), [cats]);
+  const flat        = useMemo(() => flattenCats(cats), [cats]);
+  const incomeCats  = useMemo(() => flat.filter(c => c.type === "income").map(c => c.label), [flat]);
+  const savingsCats = useMemo(() => flat.filter(c => c.type === "savings").map(c => c.label), [flat]);
+  const investCats  = useMemo(() => flat.filter(c => c.type === "investment").map(c => c.label), [flat]);
+  const retireCats  = useMemo(() => flat.filter(c => c.type === "retirement").map(c => c.label), [flat]);
+  const xferCats    = useMemo(() => flat.filter(c => c.type === "transfer").map(c => c.label), [flat]);
   const nonExpense  = useMemo(
     () => [...incomeCats, ...savingsCats, ...investCats, ...retireCats, ...xferCats],
     [incomeCats, savingsCats, investCats, retireCats, xferCats],

@@ -1,27 +1,60 @@
 import type React from "react";
-import type { Category, SankeyDiagramConfig } from "./types";
+import type { Category } from "./types";
 
-// ── Default categories ────────────────────────────────────────────────────────
-export const INIT_CATS: Category[] = [
-  { id: "c1",  name: "Food & Drink",  color: "#f97316", type: "expense" },
-  { id: "c2",  name: "Groceries",     color: "#22c55e", type: "expense" },
-  { id: "c3",  name: "Transport",     color: "#3b82f6", type: "expense" },
-  { id: "c4",  name: "Entertainment", color: "#a855f7", type: "expense" },
-  { id: "c5",  name: "Shopping",      color: "#ec4899", type: "expense" },
-  { id: "c6",  name: "Health",        color: "#14b8a6", type: "expense" },
-  { id: "c7",  name: "Utilities",     color: "#eab308", type: "expense" },
-  { id: "c8",  name: "Subscriptions", color: "#6366f1", type: "expense" },
-  { id: "c9",  name: "Savings",       color: "#06b6d4", type: "savings" },
-  { id: "c10", name: "Investment",    color: "#a78bfa", type: "investment" },
-  { id: "c11", name: "Retirement",    color: "#f59e0b", type: "retirement" },
-  { id: "c12", name: "Income",        color: "#10b981", type: "income" },
-  { id: "c13", name: "Transfer",      color: "#6b7280", type: "transfer" },
-  { id: "c14", name: "Other",         color: "#94a3b8", type: "expense" },
-  { id: "c15", name: "Pets",          color: "#98aa56", type: "expense" },
-  { id: "c16", name: "Onyx",          color: "#000000", type: "expense" },
-  { id: "c17", name: "Bills",         color: "#9c16b6", type: "expense" },
-  { id: "c18", name: "Debt",          color: "#9d2424", type: "expense" },
-  { id: "c19", name: "Benefits",      color: "#73a869", type: "expense" },
+const leaf = (id: string, label: string, color: string, type: Category["type"] = "expense"): Category =>
+  ({ id, label, color, type, subcategories: [] });
+
+// ── Default category tree ─────────────────────────────────────────────────────
+// One source of truth: drives both the Categories graph and the Sankey diagram.
+// `hidden` nodes are structural aggregators (not assignable to transactions); their
+// value is the sum of their children. Every label that transactions are tagged with
+// appears here so existing data keeps matching.
+export const DEFAULT_CATEGORIES: Category[] = [
+  {
+    id: "income", label: "Income", color: "#10b981", type: "income",
+    subcategories: [
+      leaf("benefits",   "Benefits",   "#73a869"),
+      leaf("retirement", "Retirement", "#f59e0b", "retirement"),
+      leaf("savings",    "Savings",    "#06b6d4", "savings"),
+      leaf("investment", "Investment", "#a78bfa", "investment"),
+      {
+        id: "spending", label: "Spending", color: "#f43f5e", type: "expense", hidden: true,
+        subcategories: [
+          {
+            id: "needs", label: "Needs", color: "#fb923c", type: "expense", hidden: true,
+            subcategories: [
+              leaf("utilities", "Utilities", "#eab308"),
+              leaf("groceries", "Groceries", "#22c55e"),
+              leaf("pets",      "Pets",      "#98aa56"),
+              leaf("onyx",      "Onyx",      "#0ea5e9"),
+              leaf("health",    "Health",    "#14b8a6"),
+              leaf("bills",     "Bills",     "#9c16b6"),
+              leaf("debt",      "Debt",      "#9d2424"),
+            ],
+          },
+          {
+            id: "wants", label: "Wants", color: "#f472b6", type: "expense", hidden: true,
+            subcategories: [
+              leaf("entertainment", "Entertainment", "#a855f7"),
+              leaf("shopping",      "Shopping",      "#ec4899"),
+              leaf("food",          "Food & Drink",  "#f97316"),
+              leaf("transport",     "Transport",     "#3b82f6"),
+              leaf("subscriptions", "Subscriptions", "#6366f1"),
+            ],
+          },
+          leaf("other", "Other", "#94a3b8"),
+        ],
+      },
+    ],
+  },
+  leaf("transfer", "Transfer", "#6b7280", "transfer"),
+];
+
+// Auto-color palette for new categories (used by nextColor in utils/categories).
+export const PALETTE: string[] = [
+  "#6366f1", "#f97316", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6",
+  "#eab308", "#06b6d4", "#a78bfa", "#f59e0b", "#10b981", "#f43f5e", "#0ea5e9",
+  "#84cc16", "#d946ef", "#fb923c", "#2dd4bf", "#e11d48", "#7c3aed",
 ];
 
 export const TYPE_LABELS: Record<string, string> = {
@@ -103,112 +136,4 @@ export const ED: React.CSSProperties = {
   textDecorationStyle: "dotted", textDecorationColor: "#d1d5db",
 };
 
-// ── Default Sankey diagram config ─────────────────────────────────────────────
-export const DEFAULT_SANKEY_CONFIG: SankeyDiagramConfig = {
-  roots: [
-    {
-      id: "geoff-salary",
-      name: "Geoff Salary",
-      color: "#10b981",
-      valueSource: { type: "manual", amount: 0 }, // TODO: amount should be a function of number of days in time-period & annual salary
-      children: [
-        {
-          id: "benefits",
-          name: "Benefits",
-          color: "#6b7280",
-          valueSource: { type: "transactions", categories: ["Benefits"] },
-          children: [],
-        },
-        {
-          id: "retirement",
-          name: "Retirement",
-          color: "#f59e0b",
-          valueSource: { type: "transactions", categories: ["Retirement"] },
-          children: [],
-        },
-        {
-          id: "take-home",
-          name: "Take Home",
-          color: "#06b6d4",
-          valueSource: { type: "transactions", categories: ["Income"] },
-          children: [
-            {
-              id: "save",
-              name: "Save",
-              color: "#06b6d4",
-              valueSource: { type: "transactions", categories: ["Savings"] },
-              children: [
-                {
-                  id: "house-maintenance",
-                  name: "House Maintenance",
-                  color: "#22c55e",
-                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "House" },
-                  children: [],
-                },
-                {
-                  id: "personal-savings",
-                  name: "Personal",
-                  color: "#3b82f6",
-                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "REAL TIME PAYMENT TO Geoffrey Corvera" },
-                  children: [],
-                },
-                {
-                  id: "cds",
-                  name: "CDs",
-                  color: "#a78bfa",
-                  valueSource: { type: "transactions", categories: ["Savings"], nameContains: "CD" },
-                  children: [],
-                },
-              ],
-            },
-            {
-              id: "invest",
-              name: "Invest",
-              color: "#a78bfa",
-              valueSource: { type: "transactions", categories: ["Investment"] },
-              children: [
-                {
-                  id: "vanguard",
-                  name: "Vanguard",
-                  color: "#a78bfa",
-                  valueSource: { type: "transactions", categories: ["Investment"], nameContains: "vanguard" },
-                  children: [],
-                },
-                {
-                  id: "betterment",
-                  name: "Betterment",
-                  color: "#6366f1",
-                  valueSource: { type: "transactions", categories: ["Investment"], nameContains: "betterment" },
-                  children: [],
-                },
-              ],
-            },
-            {
-              id: "spend",
-              name: "Spend",
-              color: "#f43f5e",
-              valueSource: { type: "transactions", spendingOnly: true },
-              children: [
-                {
-                  id: "needs",
-                  name: "Needs",
-                  color: "#f97316",
-                  valueSource: { type: "transactions", categories: ["Utilities", "Groceries", "Pets", "Onyx", "Health", "Bills", "Debt"] },
-                  children: [],
-                },
-                {
-                  id: "wants",
-                  name: "Wants",
-                  color: "#ec4899",
-                  valueSource: { type: "transactions", categories: ["Entertainment", "Shopping", "Food & Drink", "Transport", "Subscriptions"] },
-                  children: [],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
 

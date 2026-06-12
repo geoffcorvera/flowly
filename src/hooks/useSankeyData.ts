@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import _ from "lodash";
-import { eff } from "../utils/transactions";
-import type { Transaction, SankeyDiagramConfig, SankeyNodeConfig, SankeyValueSource } from "../types";
+import { nodeOwnValue } from "../utils/categories";
+import type { Transaction, Category } from "../types";
 
 export interface SankeyNodeDatum {
   name: string;
@@ -14,58 +13,29 @@ export interface SankeyGraphData {
   links: Array<{ source: number; target: number; value: number }>;
 }
 
-function computeValue(
-  src: SankeyValueSource,
-  txns: Transaction[],
-  nonExpense: string[],
-): number {
-  if (src.type === "manual") return src.amount;
-
-  let filtered = txns;
-  if (src.spendingOnly) {
-    filtered = filtered.filter(t => t.amount < 0 && !nonExpense.includes(t.category));
-  } else if (src.categories?.length) {
-    const cats = src.categories;
-    filtered = filtered.filter(t => cats.includes(t.category));
-  }
-  if (src.nameContains) {
-    const lc = src.nameContains.toLowerCase();
-    filtered = filtered.filter(t => t.name.toLowerCase().includes(lc));
-  }
-  return Math.round(Math.abs(_.sumBy(filtered, eff)));
-}
-
-function buildGraph(
-  config: SankeyDiagramConfig,
-  txns: Transaction[],
-  nonExpense: string[],
-): SankeyGraphData {
+function buildGraph(cats: Category[], txns: Transaction[]): SankeyGraphData {
   const nodes: SankeyNodeDatum[] = [];
   const links: Array<{ source: number; target: number; value: number }> = [];
 
-  function walk(node: SankeyNodeConfig, parentIdx: number | null): number {
+  function walk(node: Category, parentIdx: number | null): number {
     const myIdx = nodes.length;
-    nodes.push({ name: node.name, color: node.color ?? "#94a3b8", nodeConfigId: node.id });
+    nodes.push({ name: node.label, color: node.color, nodeConfigId: node.id });
 
-    if (node.children.length === 0) {
-      const value = computeValue(node.valueSource, txns, nonExpense);
+    if (node.subcategories.length === 0) {
+      const value = nodeOwnValue(node, txns);
       if (parentIdx !== null && value > 0) {
         links.push({ source: parentIdx, target: myIdx, value });
       }
       return value;
     }
 
-    // Walk children first, collecting their values
-    const childValues: number[] = [];
-    for (const child of node.children) {
-      childValues.push(walk(child, myIdx));
-    }
-    const childrenSum = childValues.reduce((s, v) => s + v, 0);
+    // Walk children first, collecting their totals.
+    const childrenSum = node.subcategories.reduce((s, c) => s + walk(c, myIdx), 0);
 
-    // Compute own value to detect unallocated gap
-    const ownValue = computeValue(node.valueSource, txns, nonExpense);
+    // The node's own value (manual override or its directly-matched transactions);
+    // any surplus over the children becomes an unallocated "Other" leaf.
+    const ownValue = nodeOwnValue(node, txns);
     const gap = ownValue > 0 ? Math.max(0, ownValue - childrenSum) : 0;
-
     if (gap > 0) {
       const otherIdx = nodes.length;
       nodes.push({ name: "Other", color: "#94a3b8", nodeConfigId: `${node.id}-other` });
@@ -73,27 +43,32 @@ function buildGraph(
     }
 
     const totalValue = ownValue > 0 ? Math.max(ownValue, childrenSum) : childrenSum;
-
     if (parentIdx !== null && totalValue > 0) {
       links.push({ source: parentIdx, target: myIdx, value: totalValue });
     }
     return totalValue;
   }
 
-  for (const root of config.roots) {
-    walk(root, null);
-  }
+  for (const root of cats) walk(root, null);
 
-  return { nodes, links };
+  // Drop nodes that aren't part of any flow (e.g. a standalone "Transfer" root leaf)
+  // so @visx/sankey isn't handed disconnected nodes.
+  const used = new Set<number>();
+  for (const l of links) { used.add(l.source); used.add(l.target); }
+  const remap = new Map<number, number>();
+  const keptNodes: SankeyNodeDatum[] = [];
+  nodes.forEach((n, i) => {
+    if (used.has(i)) { remap.set(i, keptNodes.length); keptNodes.push(n); }
+  });
+  const keptLinks = links.map(l => ({
+    source: remap.get(l.source)!,
+    target: remap.get(l.target)!,
+    value: l.value,
+  }));
+
+  return { nodes: keptNodes, links: keptLinks };
 }
 
-export function useSankeyData(
-  config: SankeyDiagramConfig,
-  periodTxns: Transaction[],
-  nonExpense: string[],
-): SankeyGraphData {
-  return useMemo(
-    () => buildGraph(config, periodTxns, nonExpense),
-    [config, periodTxns, nonExpense],
-  );
+export function useSankeyData(cats: Category[], periodTxns: Transaction[]): SankeyGraphData {
+  return useMemo(() => buildGraph(cats, periodTxns), [cats, periodTxns]);
 }

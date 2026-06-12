@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useComputedData } from "./useComputedData";
-import { INIT_CATS } from "../constants";
+import { DEFAULT_CATEGORIES } from "../constants";
 import type { Transaction } from "../types";
 
 const tx = (overrides: Partial<Transaction>): Transaction => ({
   id: "1", date: "2026-03-01", name: "Test", amount: -10, category: "Other", split: 1, account: "", ...overrides,
 });
 
-const baseInput = { cats: INIT_CATS, period: "All", catFilter: null, search: "" };
+const baseInput = { cats: DEFAULT_CATEGORIES, period: "All", catFilter: null, search: "" };
 
 describe("useComputedData — totals", () => {
   it("sums income correctly", () => {

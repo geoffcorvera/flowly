@@ -1,5 +1,6 @@
 import { S_IN, s_btn } from "../constants";
 import { $d } from "../utils/format";
+import { assignableCats, catColor as lookupCatColor } from "../utils/categories";
 import type { Category } from "../types";
 
 export interface TxnFormState {
@@ -20,7 +21,8 @@ interface TxnFormProps {
 }
 
 export function TxnForm({ form, onChange, onSave, onCancel, cats, isNew }: TxnFormProps) {
-  const catColor = (n: string) => cats.find(c => c.name === n)?.color || "#94a3b8";
+  const catColor = (n: string) => lookupCatColor(cats, n);
+  const options = assignableCats(cats);
   const disabled = !form.name || !form.amount || !form.date;
   const share = form.split > 1 ? $d((parseFloat(form.amount) || 0) / form.split) : null;
   return (
@@ -44,7 +46,7 @@ export function TxnForm({ form, onChange, onSave, onCancel, cats, isNew }: TxnFo
         <div>
           <label style={{ fontSize: 10, color: "#94a3b8", display: "block", marginBottom: 3 }}>Category</label>
           <select value={form.category} onChange={e => onChange({ ...form, category: e.target.value })} style={{ ...S_IN, color: catColor(form.category) }}>
-            {cats.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+            {options.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
           </select>
         </div>
         <div>

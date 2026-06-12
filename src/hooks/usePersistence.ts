@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
-import { INIT_CATS, DEFAULT_SANKEY_CONFIG } from "../constants";
-import type { Transaction, Category, SankeyDiagramConfig } from "../types";
+import { DEFAULT_CATEGORIES } from "../constants";
+import type { Transaction, Category } from "../types";
 
-const STORAGE_KEY = "fw8";
+const STORAGE_KEY = "fw9";
+const LEGACY_KEY = "fw8";
 
 interface StorageData {
   txns: Transaction[];
   cats: Category[];
-  sankeyConfig?: SankeyDiagramConfig;
 }
 
 export function usePersistence(
   txns: Transaction[],
   cats: Category[],
-  sankeyConfig: SankeyDiagramConfig,
   setTxns: (t: Transaction[]) => void,
   setCats: (c: Category[]) => void,
-  setSankeyConfig: (c: SankeyDiagramConfig) => void,
 ): { loaded: boolean } {
   const [loaded, setLoaded] = useState(false);
 
@@ -26,8 +24,16 @@ export function usePersistence(
       if (raw) {
         const d: StorageData = JSON.parse(raw);
         setTxns(d.txns || []);
-        setCats(d.cats || INIT_CATS);
-        setSankeyConfig(d.sankeyConfig || DEFAULT_SANKEY_CONFIG);
+        setCats(d.cats || DEFAULT_CATEGORIES);
+      } else {
+        // Migrate from the legacy flat-category schema: keep transactions (their
+        // category labels still match), seed the new default category tree.
+        const legacy = localStorage.getItem(LEGACY_KEY);
+        if (legacy) {
+          const d = JSON.parse(legacy) as { txns?: Transaction[] };
+          setTxns(d.txns || []);
+          setCats(DEFAULT_CATEGORIES);
+        }
       }
     } catch (e) {
       console.warn("Failed to load saved data:", e);
@@ -38,11 +44,11 @@ export function usePersistence(
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns, cats, sankeyConfig }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns, cats }));
     } catch (e) {
       console.warn("Failed to save data:", e);
     }
-  }, [txns, cats, sankeyConfig, loaded]);
+  }, [txns, cats, loaded]);
 
   return { loaded };
 }

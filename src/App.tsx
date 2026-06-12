@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { INIT_CATS, PERIODS, NAV, DEFAULT_SANKEY_CONFIG } from "./constants";
+import { DEFAULT_CATEGORIES, PERIODS, NAV } from "./constants";
 import { usePersistence } from "./hooks/usePersistence";
 import { useCsvImport } from "./hooks/useCsvImport";
 import { useComputedData } from "./hooks/useComputedData";
+import { catColor as lookupCatColor } from "./utils/categories";
 import { Sidebar } from "./components/Sidebar";
 import { KpiBar } from "./components/KpiBar";
 import { ImportWizard } from "./components/ImportWizard";
@@ -11,12 +12,11 @@ import { CashflowView } from "./views/CashflowView";
 import { FlowChartView } from "./views/FlowChartView";
 import { TransactionsView } from "./views/TransactionsView";
 import { CategoriesView } from "./views/CategoriesView";
-import type { Transaction, Category, ImportResult, SankeyDiagramConfig, CustomPeriod } from "./types";
+import type { Transaction, Category, ImportResult, CustomPeriod } from "./types";
 
 export default function App() {
   const [txns,         setTxns]         = useState<Transaction[]>([]);
-  const [cats,         setCats]         = useState<Category[]>(INIT_CATS);
-  const [sankeyConfig, setSankeyConfig] = useState<SankeyDiagramConfig>(DEFAULT_SANKEY_CONFIG);
+  const [cats,         setCats]         = useState<Category[]>(DEFAULT_CATEGORIES);
   const [period,       setPeriod]       = useState("6M");
   const [customPeriod, setCustomPeriod] = useState<CustomPeriod>({ from: "", to: "" });
   const [view,         setView]         = useState("overview");
@@ -24,7 +24,7 @@ export default function App() {
   const [showUpload,   setShowUpload]   = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
-  usePersistence(txns, cats, sankeyConfig, setTxns, setCats, setSankeyConfig);
+  usePersistence(txns, cats, setTxns, setCats);
 
   const csvImport = useCsvImport({
     txns,
@@ -36,10 +36,10 @@ export default function App() {
     },
   });
 
-  const { periodTxns, presentCats, filtered, totals, monthlyData, catData, xferCats, nonExpense } =
+  const { periodTxns, presentCats, filtered, totals, monthlyData, catData, xferCats } =
     useComputedData({ txns, cats, period, catFilter, search: "", customPeriod });
 
-  const catColor = (n: string) => cats.find(c => c.name === n)?.color ?? "#94a3b8";
+  const catColor = (n: string) => lookupCatColor(cats, n);
   const catTotal = catData.reduce((s, c) => s + c.value, 0);
 
   const navTo = (v: string) => {
@@ -67,9 +67,6 @@ export default function App() {
         <FlowChartView
           periodTxns={periodTxns}
           cats={cats}
-          nonExpense={nonExpense}
-          sankeyConfig={sankeyConfig}
-          onSankeyConfigChange={setSankeyConfig}
         />
       );
     }
